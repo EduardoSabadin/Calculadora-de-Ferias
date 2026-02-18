@@ -8,26 +8,39 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Calculadora de Férias</h1>
-
-        <div class="section">
-            <h2>Dados do Funcionário</h2>
-            <div class="form-group">
-                <label for="nomeFuncionario">Nome do Funcionário</label>
-                <input type="text" id="nomeFuncionario" placeholder="Digite o nome completo">
-            </div>
-            <div class="form-group">
-                <label for="dataAdmissao">Data de Admissão</label>
-                <input type="text" id="dataAdmissao" placeholder="Selecione a data de admissão">
-            </div>
-            <button onclick="calcularFerias()">Calcular Férias</button>
-            <div class="import-export">
-                <button class="success" onclick="document.getElementById('fileInput').click()">📥 Importar Dados</button>
-                <button class="secondary" onclick="exportarDados()">📤 Exportar Dados</button>
-                <input type="file" id="fileInput" accept=".json" onchange="importarDados(event)">
-            </div>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Funcionários</h2>
+            <button class="btn-add-employee" onclick="abrirModalNovoFuncionario()">➕</button>
         </div>
+        <div class="employee-list" id="employeeList">
+            <div class="empty-sidebar">Nenhum funcionário cadastrado</div>
+        </div>
+        <div class="sidebar-footer">
+            <button class="btn-sidebar" onclick="document.getElementById('fileInputMultiple').click()">📥 Importar</button>
+            <button class="btn-sidebar" onclick="exportarMultiplos()">📤 Exportar</button>
+            <input type="file" id="fileInputMultiple" accept=".json" onchange="importarMultiplos(event)" multiple>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="container">
+            <h1>Calculadora de Férias</h1>
+
+            <div class="section" id="employeeInfoSection" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0;">Dados do Funcionário</h2>
+                    <button onclick="abrirModalEditarFuncionario()" class="btn-edit">✏️ Editar</button>
+                </div>
+                <div class="employee-info-display">
+                    <div class="info-row">
+                        <strong>Nome:</strong> <span id="displayNome">-</span>
+                    </div>
+                    <div class="info-row">
+                        <strong>Data de Admissão:</strong> <span id="displayDataAdmissao">-</span>
+                    </div>
+                </div>
+            </div>
 
         <div class="section" id="resumoSection" style="display: none;">
             <h2>Resumo de Férias</h2>
@@ -80,7 +93,7 @@
     <div id="modalCalendario" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>📅 Visualizar Período</h3>
+                <h3>Visualizar Período</h3>
                 <button class="close-modal" onclick="fecharModalCalendario()">&times;</button>
             </div>
             <div class="modal-body">
@@ -140,7 +153,30 @@
                 </div>
                 <div style="text-align: right; margin-top: 20px;">
                     <button onclick="fecharModalVendidos()" class="btn-cancel">Cancelar</button>
-                    <button onclick="salvarDiasVendidos()" id="btnSalvarVendidos">💾 Salvar</button>
+                    <button onclick="salvarDiasVendidos()" id="btnSalvarVendidos">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalFuncionario" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="tituloModalFuncionario">➕ Novo Funcionário</h3>
+                <button class="close-modal" onclick="fecharModalFuncionario()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="nomeFuncionario">Nome do Funcionário</label>
+                    <input type="text" id="nomeFuncionario" placeholder="Digite o nome completo">
+                </div>
+                <div class="form-group">
+                    <label for="dataAdmissao">Data de Admissão</label>
+                    <input type="text" id="dataAdmissao" placeholder="Selecione a data de admissão">
+                </div>
+                <div style="text-align: right; margin-top: 20px;">
+                    <button onclick="fecharModalFuncionario()" class="btn-cancel">Cancelar</button>
+                    <button onclick="salvarFuncionario()" id="btnSalvarFuncionario">Salvar</button>
                 </div>
             </div>
         </div>

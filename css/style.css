@@ -425,3 +425,209 @@ tbody tr:hover {
 .flatpickr-input {
     cursor: pointer;
 }
+
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 280px;
+    height: 100vh;
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+}
+
+.sidebar-header {
+    padding: 25px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sidebar-header h2 {
+    color: white;
+    margin: 0;
+    font-size: 1.5em;
+}
+
+.btn-add-employee {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+}
+
+.btn-add-employee:hover {
+    background: white;
+    color: #667eea;
+    transform: scale(1.1);
+}
+
+.employee-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 0;
+}
+
+.employee-item {
+    padding: 15px 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-left: 4px solid transparent;
+    color: white;
+}
+
+.employee-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-left-color: white;
+}
+
+.employee-item.active {
+    background: rgba(255, 255, 255, 0.2);
+    border-left-color: white;
+    font-weight: bold;
+}
+
+.employee-item-name {
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.employee-item-date {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.employee-item-actions {
+    display: flex;
+    gap: 5px;
+    margin-top: 8px;
+}
+
+.btn-employee-action {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-employee-action:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.btn-employee-delete {
+    background: rgba(245, 87, 108, 0.8);
+}
+
+.btn-employee-delete:hover {
+    background: #f5576c;
+}
+
+.empty-sidebar {
+    padding: 40px 20px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+    font-style: italic;
+}
+
+.sidebar-footer {
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    gap: 10px;
+}
+
+.btn-sidebar {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin: 0;
+}
+
+.btn-sidebar:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+#fileInputMultiple {
+    display: none;
+}
+
+/* Main Content com Sidebar */
+.main-content {
+    margin-left: 280px;
+    min-height: 100vh;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+/* Employee Info Display */
+.employee-info-display {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.info-row {
+    padding: 10px 0;
+    font-size: 16px;
+    border-bottom: 1px solid #eee;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-row strong {
+    color: #667eea;
+    margin-right: 10px;
+}
+
+.container {
+    max-width: 100%;
+    margin: 0;
+    border-radius: 0;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+    }
+    
+    .main-content {
+        margin-left: 0;
+    }
+    
+    .employee-list {
+        max-height: 300px;
+    }
+}

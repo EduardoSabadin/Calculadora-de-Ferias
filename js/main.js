@@ -1,3 +1,5 @@
+let funcionarios = [];
+let funcionarioAtualId = null;
 let dadosFuncionario = {
     nome: '',
     dataAdmissao: null,
@@ -73,6 +75,244 @@ window.addEventListener('load', function() {
 
     carregarDadosSalvos();
 });
+
+function abrirModalNovoFuncionario() {
+    funcionarioAtualId = null;
+    
+    document.getElementById('tituloModalFuncionario').textContent = '➕ Novo Funcionário';
+    document.getElementById('btnSalvarFuncionario').textContent = 'Criar Funcionário';
+    document.getElementById('nomeFuncionario').value = '';
+    flatpickrAdmissao.clear();
+    document.getElementById('modalFuncionario').style.display = 'block';
+}
+
+function abrirModalEditarFuncionario() {
+    if (!funcionarioAtualId) {
+        alert('Nenhum funcionário selecionado.');
+        return;
+    }
+    
+    document.getElementById('tituloModalFuncionario').textContent = '✏️ Editar Funcionário';
+    document.getElementById('btnSalvarFuncionario').textContent = 'Salvar Alterações';
+    document.getElementById('nomeFuncionario').value = dadosFuncionario.nome;
+    const dataAdmissao = new Date(dadosFuncionario.dataAdmissao + 'T00:00:00');
+    flatpickrAdmissao.setDate(dataAdmissao);
+    document.getElementById('modalFuncionario').style.display = 'block';
+}
+
+function fecharModalFuncionario() {
+    document.getElementById('modalFuncionario').style.display = 'none';
+}
+
+function salvarFuncionario() {
+    const nome = document.getElementById('nomeFuncionario').value.trim();
+    const dataAdmissaoStr = document.getElementById('dataAdmissao').value;
+
+    if (!nome || !dataAdmissaoStr) {
+        alert('Por favor, preencha o nome e a data de admissão.');
+        return;
+    }
+
+    const partes = dataAdmissaoStr.split('/');
+    if (partes.length !== 3) {
+        alert('Data inválida. Use o formato dd/mm/aaaa');
+        return;
+    }
+
+    const dataAdmissao = `${partes[2]}-${partes[1].padStart(2, '0')}-${partes[0].padStart(2, '0')}`;
+    const dataObj = new Date(dataAdmissao + 'T00:00:00');
+    
+    if (isNaN(dataObj.getTime())) {
+        alert('Data de admissão inválida.');
+        return;
+    }
+
+    const funcionarioExistente = funcionarios.find(f => f.id === funcionarioAtualId);
+    
+    if (funcionarioExistente) {
+        dadosFuncionario.nome = nome;
+        dadosFuncionario.dataAdmissao = dataAdmissao;
+        
+        const index = funcionarios.findIndex(f => f.id === funcionarioAtualId);
+        if (index !== -1) {
+            funcionarios[index] = { ...dadosFuncionario };
+        }
+    } else {
+        const novoFuncionario = {
+            id: Date.now().toString(),
+            nome: nome,
+            dataAdmissao: dataAdmissao,
+            feriastiradas: [],
+            diasvendidos: []
+        };
+        funcionarios.push(novoFuncionario);
+        selecionarFuncionario(novoFuncionario.id);
+    }
+
+    salvarNoLocalStorage();
+    renderizarListaFuncionarios();
+    if (funcionarioAtualId) {
+        atualizarInterface();
+    }
+    fecharModalFuncionario();
+}
+
+function selecionarFuncionario(id) {
+    funcionarioAtualId = id;
+    const funcionario = funcionarios.find(f => f.id === id);
+    
+    if (funcionario) {
+        dadosFuncionario = { ...funcionario };
+        renderizarListaFuncionarios();
+        atualizarInterface();
+        document.getElementById('employeeInfoSection').style.display = 'block';
+    }
+}
+
+function renderizarListaFuncionarios() {
+    const lista = document.getElementById('employeeList');
+    
+    if (funcionarios.length === 0) {
+        lista.innerHTML = '<div class="empty-sidebar">Nenhum funcionário cadastrado</div>';
+        return;
+    }
+
+    let html = '';
+    funcionarios.forEach(func => {
+        const isActive = func.id === funcionarioAtualId ? 'active' : '';
+        const dataAdmissao = new Date(func.dataAdmissao + 'T00:00:00');
+        html += `
+            <div class="employee-item ${isActive}" onclick="selecionarFuncionario('${func.id}')">
+                <div class="employee-item-name">${func.nome}</div>
+                <div class="employee-item-date">Admissão: ${formatarData(dataAdmissao)}</div>
+                <div class="employee-item-actions">
+                    <button class="btn-employee-action" onclick="event.stopPropagation(); exportarFuncionario('${func.id}')">📤</button>
+                    <button class="btn-employee-action btn-employee-delete" onclick="event.stopPropagation(); excluirFuncionario('${func.id}')">🗑️</button>
+                </div>
+            </div>
+        `;
+    });
+    lista.innerHTML = html;
+}
+
+function excluirFuncionario(id) {
+    if (!confirm('Deseja realmente excluir este funcionário?')) {
+        return;
+    }
+    
+    funcionarios = funcionarios.filter(f => f.id !== id);
+    
+    if (funcionarioAtualId === id) {
+        if (funcionarios.length > 0) {
+            selecionarFuncionario(funcionarios[0].id);
+        } else {
+            funcionarioAtualId = null;
+            dadosFuncionario = {
+                nome: '',
+                dataAdmissao: null,
+                feriastiradas: [],
+                diasvendidos: []
+            };
+            document.getElementById('employeeInfoSection').style.display = 'none';
+            document.getElementById('resumoSection').style.display = 'none';
+            document.getElementById('periodosSection').style.display = 'none';
+            document.getElementById('feriasListaSection').style.display = 'none';
+            document.getElementById('vendidasListaSection').style.display = 'none';
+        }
+    }
+    
+    salvarNoLocalStorage();
+    renderizarListaFuncionarios();
+}
+
+function exportarFuncionario(id) {
+    const funcionario = funcionarios.find(f => f.id === id);
+    if (!funcionario) return;
+    
+    const dataStr = JSON.stringify(funcionario, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ferias_${funcionario.nome.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function exportarMultiplos() {
+    if (funcionarios.length === 0) {
+        alert('Não há funcionários para exportar.');
+        return;
+    }
+    
+    const dataStr = JSON.stringify(funcionarios, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `funcionarios_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function importarMultiplos(event) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    let importados = 0;
+    let erros = 0;
+
+    Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const dados = JSON.parse(e.target.result);
+
+                if (Array.isArray(dados)) {
+                    dados.forEach(func => {
+                        if (func.nome && func.dataAdmissao) {
+                            if (!func.id) {
+                                func.id = Date.now().toString() + Math.random();
+                            }
+                            if (!func.feriastiradas) func.feriastiradas = [];
+                            if (!func.diasvendidos) func.diasvendidos = [];
+                            funcionarios.push(func);
+                            importados++;
+                        }
+                    });
+                } else if (dados.nome && dados.dataAdmissao) {
+                    if (!dados.id) {
+                        dados.id = Date.now().toString();
+                    }
+                    if (!dados.feriastiradas) dados.feriastiradas = [];
+                    if (!dados.diasvendidos) dados.diasvendidos = [];
+                    funcionarios.push(dados);
+                    importados++;
+                }
+                
+                salvarNoLocalStorage();
+                renderizarListaFuncionarios();
+                
+                if (funcionarios.length > 0 && !funcionarioAtualId) {
+                    selecionarFuncionario(funcionarios[0].id);
+                }
+                
+                alert(`${importados} funcionário(s) importado(s) com sucesso!`);
+            } catch (error) {
+                erros++;
+                console.error('Erro ao importar arquivo:', error);
+                alert('Erro ao importar arquivo. Verifique se o formato está correto.');
+            }
+        };
+        reader.readAsText(file);
+    });
+    
+    event.target.value = '';
+}
 
 function processarTextoColado(texto) {
     const textoLimpo = texto.replace(/[^\d\/]/g, '');
@@ -185,7 +425,7 @@ function processarDataDigitada() {
 
 function abrirModalFerias() {
     document.getElementById('tituloModalFerias').textContent = '➕ Adicionar Férias';
-    document.getElementById('btnSalvarFerias').textContent = '💾 Salvar';
+    document.getElementById('btnSalvarFerias').textContent = 'Salvar';
     document.getElementById('modalFerias').style.display = 'block';
     
     const dataAdmissao = new Date(dadosFuncionario.dataAdmissao + 'T00:00:00');
@@ -203,7 +443,7 @@ function fecharModalFerias() {
 
 function abrirModalVendidos() {
     document.getElementById('tituloModalVendidos').textContent = '➕ Adicionar Venda';
-    document.getElementById('btnSalvarVendidos').textContent = '💾 Salvar';
+    document.getElementById('btnSalvarVendidos').textContent = 'Salvar';
     document.getElementById('modalVendidos').style.display = 'block';
     
     const dataAdmissao = new Date(dadosFuncionario.dataAdmissao + 'T00:00:00');
@@ -227,37 +467,15 @@ function fecharModalCalendario() {
     }
 }
 
-function calcularFerias() {
-    const nome = document.getElementById('nomeFuncionario').value.trim();
-    const dataAdmissaoStr = document.getElementById('dataAdmissao').value;
-
-    if (!nome || !dataAdmissaoStr) {
-        alert('Por favor, preencha o nome e a data de admissão.');
-        return;
-    }
-
-    const partes = dataAdmissaoStr.split('/');
-    if (partes.length !== 3) {
-        alert('Data inválida. Use o formato dd/mm/aaaa');
-        return;
-    }
-
-    const dataAdmissao = `${partes[2]}-${partes[1].padStart(2, '0')}-${partes[0].padStart(2, '0')}`;
-    const dataObj = new Date(dataAdmissao + 'T00:00:00');
-    
-    if (isNaN(dataObj.getTime())) {
-        alert('Data de admissão inválida.');
-        return;
-    }
-
-    dadosFuncionario.nome = nome;
-    dadosFuncionario.dataAdmissao = dataAdmissao;
-
-    atualizarInterface();
-}
-
 function atualizarInterface() {
+    if (!dadosFuncionario.nome || !dadosFuncionario.dataAdmissao) {
+        return;
+    }
+
+    document.getElementById('displayNome').textContent = dadosFuncionario.nome;
     const dataAdmissao = new Date(dadosFuncionario.dataAdmissao + 'T00:00:00');
+    document.getElementById('displayDataAdmissao').textContent = formatarData(dataAdmissao);
+
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
@@ -277,6 +495,7 @@ function atualizarInterface() {
     document.getElementById('diasDisponiveis').textContent = disponivel;
     document.getElementById('diasVencidos').textContent = vencido;
 
+    document.getElementById('employeeInfoSection').style.display = 'block';
     document.getElementById('resumoSection').style.display = 'block';
     document.getElementById('periodosSection').style.display = 'block';
     document.getElementById('feriasListaSection').style.display = 'block';
@@ -286,6 +505,14 @@ function atualizarInterface() {
     renderizarFeriasTiradas();
     renderizarDiasVendidos();
     atualizarSelectPeriodos(periodosAquisitivos);
+
+    if (funcionarioAtualId) {
+        const index = funcionarios.findIndex(f => f.id === funcionarioAtualId);
+        if (index !== -1) {
+            funcionarios[index] = { ...dadosFuncionario };
+            salvarNoLocalStorage();
+        }
+    }
 }
 
 function calcularPeriodosAquisitivos(dataAdmissao, dataReferencia) {
@@ -563,6 +790,7 @@ function salvarFerias() {
 
     fecharModalFerias();
     atualizarInterface();
+    salvarNoLocalStorage();
 }
 
 function limparFormularioFerias() {
@@ -581,7 +809,7 @@ function editarFerias(index) {
 
     indiceEdicaoFerias = index;
     document.getElementById('tituloModalFerias').textContent = '✏️ Editar Férias';
-    document.getElementById('btnSalvarFerias').textContent = '💾 Salvar Edição';
+    document.getElementById('btnSalvarFerias').textContent = 'Salvar Edição';
     
     abrirModalFerias();
 }
@@ -620,6 +848,7 @@ function salvarDiasVendidos() {
 
     fecharModalVendidos();
     atualizarInterface();
+    salvarNoLocalStorage();
 }
 
 function limparFormularioVendidos() {
@@ -637,7 +866,7 @@ function editarDiasVendidos(index) {
 
     indiceEdicaoVendidos = index;
     document.getElementById('tituloModalVendidos').textContent = '✏️ Editar Venda';
-    document.getElementById('btnSalvarVendidos').textContent = '💾 Salvar Edição';
+    document.getElementById('btnSalvarVendidos').textContent = 'Salvar Edição';
     
     abrirModalVendidos();
 }
@@ -690,6 +919,8 @@ window.onclick = function(event) {
             fecharModalFerias();
         } else if (event.target.id === 'modalVendidos') {
             fecharModalVendidos();
+        } else if (event.target.id === 'modalFuncionario') {
+            fecharModalFuncionario();
         }
     }
 }
@@ -798,6 +1029,7 @@ function removerFerias(index) {
         }
         
         atualizarInterface();
+        salvarNoLocalStorage();
     }
 }
 
@@ -812,6 +1044,7 @@ function removerDiasVendidos(index) {
         }
         
         atualizarInterface();
+        salvarNoLocalStorage();
     }
 }
 
@@ -822,78 +1055,32 @@ function formatarData(data) {
     return `${dia}/${mes}/${ano}`;
 }
 
-function exportarDados() {
-    if (!dadosFuncionario.nome || !dadosFuncionario.dataAdmissao) {
-        alert('Não há dados para exportar.');
-        return;
-    }
-
-    const dataStr = JSON.stringify(dadosFuncionario, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ferias_${dadosFuncionario.nome.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
-function importarDados(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const dados = JSON.parse(e.target.result);
-            
-            if (!dados.nome || !dados.dataAdmissao) {
-                alert('Arquivo inválido.');
-                return;
-            }
-
-            dadosFuncionario = dados;
-            
-            if (!dadosFuncionario.diasvendidos) {
-                dadosFuncionario.diasvendidos = [];
-            }
-            
-            document.getElementById('nomeFuncionario').value = dados.nome;
-            
-            const dataAdmissao = new Date(dados.dataAdmissao + 'T00:00:00');
-            flatpickrAdmissao.setDate(dataAdmissao);
-            
-            atualizarInterface();
-            alert('Dados importados com sucesso!');
-        } catch (error) {
-            alert('Erro ao importar arquivo. Verifique se o formato está correto.');
-        }
-    };
-    reader.readAsText(file);
-    event.target.value = '';
-}
 
 function carregarDadosSalvos() {
-    const dadosSalvos = localStorage.getItem('dadosFeriasApp');
+    const dadosSalvos = localStorage.getItem('funcionariosFeriasApp');
     if (dadosSalvos) {
         try {
-            dadosFuncionario = JSON.parse(dadosSalvos);
-            
-            if (!dadosFuncionario.diasvendidos) {
-                dadosFuncionario.diasvendidos = [];
+            const dados = JSON.parse(dadosSalvos);
+
+            if (Array.isArray(dados)) {
+                funcionarios = dados;
+            } else if (dados.nome && dados.dataAdmissao) {
+                if (!dados.id) {
+                    dados.id = Date.now().toString();
+                }
+                funcionarios = [dados];
             }
+
+            funcionarios.forEach(func => {
+                if (!func.id) func.id = Date.now().toString() + Math.random();
+                if (!func.feriastiradas) func.feriastiradas = [];
+                if (!func.diasvendidos) func.diasvendidos = [];
+            });
             
-            document.getElementById('nomeFuncionario').value = dadosFuncionario.nome;
+            renderizarListaFuncionarios();
             
-            if (dadosFuncionario.dataAdmissao) {
-                const dataAdmissao = new Date(dadosFuncionario.dataAdmissao + 'T00:00:00');
-                flatpickrAdmissao.setDate(dataAdmissao);
-            }
-            
-            if (dadosFuncionario.nome && dadosFuncionario.dataAdmissao) {
-                atualizarInterface();
+            if (funcionarios.length > 0) {
+                selecionarFuncionario(funcionarios[0].id);
             }
         } catch (e) {
             console.error('Erro ao carregar dados salvos', e);
@@ -902,37 +1089,5 @@ function carregarDadosSalvos() {
 }
 
 function salvarNoLocalStorage() {
-    if (dadosFuncionario.nome && dadosFuncionario.dataAdmissao) {
-        localStorage.setItem('dadosFeriasApp', JSON.stringify(dadosFuncionario));
-    }
+    localStorage.setItem('funcionariosFeriasApp', JSON.stringify(funcionarios));
 }
-
-const calcularFeriasOriginal = calcularFerias;
-calcularFerias = function() {
-    calcularFeriasOriginal();
-    salvarNoLocalStorage();
-};
-
-const salvarFeriasOriginal = salvarFerias;
-salvarFerias = function() {
-    salvarFeriasOriginal();
-    salvarNoLocalStorage();
-};
-
-const salvarDiasVendidosOriginal = salvarDiasVendidos;
-salvarDiasVendidos = function() {
-    salvarDiasVendidosOriginal();
-    salvarNoLocalStorage();
-};
-
-const removerFeriasOriginal = removerFerias;
-removerFerias = function(index) {
-    removerFeriasOriginal(index);
-    salvarNoLocalStorage();
-};
-
-const removerDiasVendidosOriginal = removerDiasVendidos;
-removerDiasVendidos = function(index) {
-    removerDiasVendidosOriginal(index);
-    salvarNoLocalStorage();
-};
