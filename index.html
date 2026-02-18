@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Férias</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Calculadora de Férias</h1>
+
+        <div class="section">
+            <h2>Dados do Funcionário</h2>
+            <div class="form-group">
+                <label for="nomeFuncionario">Nome do Funcionário</label>
+                <input type="text" id="nomeFuncionario" placeholder="Digite o nome completo">
+            </div>
+            <div class="form-group">
+                <label for="dataAdmissao">Data de Admissão</label>
+                <input type="text" id="dataAdmissao" placeholder="Selecione a data de admissão">
+            </div>
+            <button onclick="calcularFerias()">Calcular Férias</button>
+            <div class="import-export">
+                <button class="success" onclick="document.getElementById('fileInput').click()">📥 Importar Dados</button>
+                <button class="secondary" onclick="exportarDados()">📤 Exportar Dados</button>
+                <input type="file" id="fileInput" accept=".json" onchange="importarDados(event)">
+            </div>
+        </div>
+
+        <div class="section" id="resumoSection" style="display: none;">
+            <h2>Resumo de Férias</h2>
+            <div class="info-cards">
+                <div class="info-card">
+                    <h3>Tempo de Empresa</h3>
+                    <div class="value" id="tempoEmpresa">0</div>
+                    <p>meses</p>
+                </div>
+                <div class="info-card success">
+                    <h3>Dias Disponíveis</h3>
+                    <div class="value" id="diasDisponiveis">0</div>
+                    <p>dias</p>
+                </div>
+                <div class="info-card warning">
+                    <h3>Dias Vencidos</h3>
+                    <div class="value" id="diasVencidos">0</div>
+                    <p>dias</p>
+                </div>
+                <div class="info-card">
+                    <h3>Períodos Aquisitivos</h3>
+                    <div class="value" id="periodosAquisitivos">0</div>
+                    <p>períodos</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section" id="periodosSection" style="display: none;">
+            <h2>Períodos Aquisitivos</h2>
+            <div id="periodosContainer"></div>
+        </div>
+
+        <div class="section" id="feriasListaSection" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0;">Férias Tiradas</h2>
+                <button onclick="abrirModalFerias()">➕ Adicionar Férias</button>
+            </div>
+            <div id="feriasListaContainer"></div>
+        </div>
+
+        <div class="section" id="vendidasListaSection" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0;">Dias Vendidos</h2>
+                <button onclick="abrirModalVendidos()">➕ Adicionar Venda</button>
+            </div>
+            <div id="vendidasListaContainer"></div>
+        </div>
+    </div>
+
+    <div id="modalCalendario" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📅 Visualizar Período</h3>
+                <button class="close-modal" onclick="fecharModalCalendario()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="calendar-info">
+                    <p><strong>Data Início:</strong> <span id="modalDataInicio">-</span></p>
+                    <p><strong>Data Fim:</strong> <span id="modalDataFim">-</span></p>
+                    <p><strong>Total:</strong> <span id="modalTotalDias">-</span> dias</p>
+                </div>
+                <div id="modalCalendarioContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalFerias" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="tituloModalFerias">➕ Adicionar Férias</h3>
+                <button class="close-modal" onclick="fecharModalFerias()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="rangeFerias">Período das Férias</label>
+                    <input type="text" id="rangeFerias" placeholder="Digite ddmmaaaa ddmmaaaa ou clique no calendário">
+                </div>
+                <div class="form-group">
+                    <label for="observacoesFerias">Observações</label>
+                    <textarea id="observacoesFerias" placeholder="Digite observações sobre estas férias..."></textarea>
+                </div>
+                <div style="text-align: right; margin-top: 20px;">
+                    <button onclick="fecharModalFerias()" class="btn-cancel">Cancelar</button>
+                    <button onclick="salvarFerias()" id="btnSalvarFerias">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalVendidos" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="tituloModalVendidos">➕ Adicionar Venda</h3>
+                <button class="close-modal" onclick="fecharModalVendidos()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="periodoVendido">Período Aquisitivo</label>
+                    <select id="periodoVendido">
+                        <option value="">Selecione o período aquisitivo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="diasVendidos">Quantidade de Dias Vendidos</label>
+                    <input type="number" id="diasVendidos" value="0" min="0" max="10">
+                </div>
+                <div class="form-group">
+                    <label for="observacoesVendidas">Observações</label>
+                    <textarea id="observacoesVendidas" placeholder="Digite observações sobre a venda..."></textarea>
+                </div>
+                <div style="text-align: right; margin-top: 20px;">
+                    <button onclick="fecharModalVendidos()" class="btn-cancel">Cancelar</button>
+                    <button onclick="salvarDiasVendidos()" id="btnSalvarVendidos">💾 Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
